@@ -4,19 +4,30 @@ org 100h
 VIDEOSEG   	equ 0b800h
 Start:     	mov cl, ds: byte ptr [80h]
 		dec cl
-		mov ax, VIDEOSEG
-            	mov es, ax
-           	mov bx, 80*2*23d
-		mov di, 82h
-		mov si, 0
+
+		mov al, cl			;there i divide the length by 2
+		mov dl, 2
+		div dl				;total in al
+
+           	mov bx, 80*2*13d 		;practically the center (y)
 		
-		l:
-		mov al, ds: byte ptr [di];input str
-            	mov ah, 5dh
-		add bx, 2
-            	mov es: word ptr [bx], ax ;place
-		inc di
-		loop l
+		add bx, 80			;there i find the center (x)
+		;xor ah, ah			;delete residue from division
+		mov ah, 0
+		sub bx, ax			;clear ax
+		mov ax, 0
+
+		mov di, 82h      		;first symbol of str
+		mov ax, VIDEOSEG
+		mov es, ax
+		
+		GetAndPrintLine:
+		mov al, ds: byte ptr [di]	;input str
+            	mov ah, 5dh			;color
+		add bx, 2			;step
+            	mov es: word ptr [bx], ax 	;place on display
+		inc di				;increase counter of symbols
+		loop GetAndPrintLine
 
 	    	mov ax, 4c00h
 	    	int 21h
