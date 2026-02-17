@@ -1,0 +1,144 @@
+.model	tiny
+  .code
+  ORG 	100h
+  xlen equ 20
+  ylen equ 5
+  x1 equ 72
+  x2 equ x1 + xlen
+  y1 equ 80 * 2 * 11d
+  y2 equ 80 * 2 * 15d
+  color = 3dh
+  xline = 0c4h
+  yline = 0b3h
+  LUP_POS = y1 + x1
+  LDOWN_POS = y2 + x1
+  RUP_POS = y1 + x2 + xlen
+  RDOWN_POS = y2 + x2 + xlen
+  VIDEOSEG equ 0b800h
+  
+start:	
+  mov ax, VIDEOSEG
+  mov es, ax
+
+  mov cx, xlen
+  mov bx, y1
+  add bx, x1
+  call PrintLineX
+
+  mov cx, xlen
+  mov bx, y2
+  add bx, x1
+  call PrintLineX
+
+  mov cx, ylen
+  mov bx, y1
+  add bx, x1
+  call PrintLineY
+
+  mov cx, ylen
+  mov bx, y1
+  add bx, x2+xlen
+  call PrintLineY
+
+  call PrintLDOWNAngle
+  call PrintRDOWNAngle
+  call PrintLUPAngle
+  call PrintRUPAngle
+
+  mov ax, 4c00h
+  int 21h
+
+;----------------------------------------------------------------------
+;                              PrintLineX
+;	print hor line cx times, in bx start pos on the screen
+;Entry: cx - amount of symb
+;	bx - (first) symb pos
+;Exit: ???
+;Destr: cx becomes 0, bx becomes bx + 2 * cx(start)
+;----------------------------------------------------------------------
+  PrintLineX	proc
+  		Printline:
+		mov es: byte ptr [bx], xline
+		mov es: byte ptr [bx + 1], color
+		add bx, 2
+		loop PrintLine
+		ret
+		endp
+
+
+;----------------------------------------------------------------------
+;                                PrintLineY
+;	print vert line cx times, in bx start pos on the screen
+;Entry: cx - amount of symb
+;	bx - (first) symb pos
+;Exit: ???
+;Destr: cx becomes 0, bx becomes bx + 2 * cx(start)
+;----------------------------------------------------------------------
+  PrintLineY	proc
+  		Printlinee:
+		mov es: byte ptr [bx], yline
+		mov es: byte ptr [bx + 1], color
+		add bx, 80*2
+		loop PrintLinee
+		ret
+		endp
+
+;----------------------------------------------------------------------
+;                              PrintLUPAngle
+;	print upper left angle
+;Entry: -
+;Exit: ???
+;Destr: 
+;----------------------------------------------------------------------
+  PrintLUPAngle	proc
+                mov bx, LUP_POS
+		            mov es: byte ptr [bx], 0dah
+		            mov es: byte ptr [bx + 1], color
+		            ret
+		            endp
+              
+;----------------------------------------------------------------------
+;                              PrintRUPAngle
+;	print upper right angle
+;Entry: -
+;Exit: ???
+;Destr: 
+;----------------------------------------------------------------------
+  PrintRUPAngle	proc
+                mov bx, RUP_POS
+		            mov es: byte ptr [bx], 0bfh
+		            mov es: byte ptr [bx + 1], color
+		            ret
+		            endp
+
+;----------------------------------------------------------------------
+;                              PrintRDOWNAngle
+;	print bottom right angle
+;Entry: -
+;Exit: ???
+;Destr: 
+;----------------------------------------------------------------------
+  PrintRDOWNAngle	proc
+                mov bx, RDOWN_POS
+		            mov es: byte ptr [bx], 0d9h
+		            mov es: byte ptr [bx + 1], color
+		            ret
+		            endp
+
+;----------------------------------------------------------------------
+;                              PrintLDOWNAngle
+;	print bottom left angle
+;Entry: -
+;Exit: ???
+;Destr: 
+;----------------------------------------------------------------------
+  PrintLDOWNAngle	proc
+                mov bx, LDOWN_POS
+		            mov es: byte ptr [bx], 0c0h
+		            mov es: byte ptr [bx + 1], color
+		            ret
+		            endp
+
+  mov ax, 4c00h
+  int 21h
+END	start
