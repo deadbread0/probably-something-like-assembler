@@ -106,9 +106,7 @@ start:
 
     mov bx, 80*2*13d 		;practically the center (y)
       
-    ;mov ah, 0 ;new
     add bx, 80			;there i find the center (x)
-    ;xor ah, ah			;delete residue from division
     mov ah, 0
     sub bx, ax			;clear ax
     mov ax, 0
@@ -162,7 +160,6 @@ start:
                 add bx, 80d
                 sub bx, si
                 sub bx, xlen/2
-                ;mov bx, LUP_POS
 		            mov es: byte ptr [bx], 0dah
 		            mov es: byte ptr [bx + 1], color
 		            ret
@@ -180,7 +177,6 @@ start:
                 add bx, 80d
                 add bx, si
                 add bx, xlen
-                ;mov bx, RUP_POS
 		            mov es: byte ptr [bx], 0bfh
 		            mov es: byte ptr [bx + 1], color
 		            ret
@@ -198,7 +194,6 @@ start:
                 add bx, 80d
                 add bx, si
                 add bx, xlen
-                ;mov bx, RDOWN_POS
 		            mov es: byte ptr [bx], 0d9h
 		            mov es: byte ptr [bx + 1], color
 		            ret
@@ -216,7 +211,6 @@ start:
                 add bx, 80d
                 sub bx, si
                 sub bx, xlen/2
-                ;mov bx, LDOWN_POS
 		            mov es: byte ptr [bx], 0c0h
 		            mov es: byte ptr [bx + 1], color
 		            ret
@@ -224,4 +218,5 @@ start:
 
   mov ax, 4c00h
   int 21h
+
 END	start
