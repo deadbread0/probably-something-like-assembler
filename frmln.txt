@@ -1,0 +1,227 @@
+.model	tiny
+  .code
+  ORG 	100h
+  xlen equ 20
+  ylen equ 5
+  y1 equ 80 * 2 * 11d
+  y2 equ 80 * 2 * 15d
+  color = 3dh
+  xline = 0c4h
+  yline = 0b3h
+  VIDEOSEG equ 0b800h
+  
+start:	
+
+;str part
+  mov cl, ds: byte ptr [80h]
+  dec cl
+
+  call FindCenterOfString
+  call PrintString
+
+  mov ax, VIDEOSEG
+  mov es, ax
+
+
+  mov cx, xlen
+  mov bx, y1
+  add bx, 80d
+  sub bx, si
+  sub bx, xlen/2
+  call PrintLineX
+
+  mov cx, xlen
+  mov bx, y2
+  add bx, 80d
+  sub bx, si
+  sub bx, xlen/2
+  call PrintLineX
+
+  mov cx, ylen
+  mov bx, y1
+  add bx, 80d
+  sub bx, si
+  sub bx, xlen/2
+  call PrintLineY
+
+  mov cx, ylen
+  mov bx, y1
+  add bx, 80d
+  add bx, si
+  add bx, xlen
+  call PrintLineY
+
+
+  call PrintLUPAngle
+  call PrintRUPAngle
+  call PrintLDOWNAngle
+  call PrintRDOWNAngle
+  
+;///////////////////////////////////////////////////////////////////////
+
+
+  mov ax, 4c00h
+  int 21h
+;----------------------------------------------------------------------
+;                         PrintString
+;get and print string (unexpected)
+;Entry: bx - start pos
+;Exit: 
+;Destr: ax
+;----------------------------------------------------------------------
+
+  PrintString proc
+	mov di, 82h      		;first symbol of str
+	mov ax, VIDEOSEG
+	mov es, ax
+		
+	GetAndPrintLine:
+		
+	mov al, ds: byte ptr [di]	;input str
+  mov ah, 5dh			;color
+	add bx, 2			;step
+  mov es: word ptr [bx], ax 	;place on display
+	inc di				;increase counter of symbols
+		
+	loop GetAndPrintLine
+  ret
+  endp
+
+
+;----------------------------------------------------------------------
+;                         FindCenterOfString
+;find the center of a string (unbelievable)
+;Entry: cl - length of string
+;Exit: total in al
+;Destr: ???
+;----------------------------------------------------------------------
+  FindCenterOfString proc
+
+    mov al, cl			;there i divide the length by 2
+    mov dl, 4
+    div dl				;total in al
+    xor dh, dh
+    mov si, dx
+    shl al, 1d			;mul2
+
+    mov bx, 80*2*13d 		;practically the center (y)
+      
+    ;mov ah, 0 ;new
+    add bx, 80			;there i find the center (x)
+    ;xor ah, ah			;delete residue from division
+    mov ah, 0
+    sub bx, ax			;clear ax
+    mov ax, 0
+    ret
+    endp
+
+;----------------------------------------------------------------------
+;                              PrintLineX
+;	print hor line cx times, in bx start pos on the screen
+;Entry: cx - amount of symb
+;	bx - (first) symb pos
+;Exit: ???
+;Destr: cx becomes 0, bx becomes bx + 2 * cx(start)
+;----------------------------------------------------------------------
+  PrintLineX	proc
+  		Printline:
+		mov es: byte ptr [bx], xline
+		mov es: byte ptr [bx + 1], color
+		add bx, 2
+		loop PrintLine
+		ret
+		endp
+
+
+;----------------------------------------------------------------------
+;                                PrintLineY
+;	print vert line cx times, in bx start pos on the screen
+;Entry: cx - amount of symb
+;	bx - (first) symb pos
+;Exit: ???
+;Destr: cx becomes 0, bx becomes bx + 2 * cx(start)
+;----------------------------------------------------------------------
+  PrintLineY	proc
+  		Printlinee:
+		mov es: byte ptr [bx], yline
+		mov es: byte ptr [bx + 1], color
+		add bx, 80*2
+		loop PrintLinee
+		ret
+		endp
+
+;----------------------------------------------------------------------
+;                              PrintLUPAngle
+;	print upper left angle
+;Entry: - 
+;Exit: ???
+;Destr: 
+;----------------------------------------------------------------------
+  PrintLUPAngle	proc
+                mov bx, y1
+                add bx, 80d
+                sub bx, si
+                sub bx, xlen/2
+                ;mov bx, LUP_POS
+		            mov es: byte ptr [bx], 0dah
+		            mov es: byte ptr [bx + 1], color
+		            ret
+		            endp
+              
+;----------------------------------------------------------------------
+;                              PrintRUPAngle
+;	print upper right angle
+;Entry: -
+;Exit: ???
+;Destr: 
+;----------------------------------------------------------------------
+  PrintRUPAngle	proc
+                mov bx, y1
+                add bx, 80d
+                add bx, si
+                add bx, xlen
+                ;mov bx, RUP_POS
+		            mov es: byte ptr [bx], 0bfh
+		            mov es: byte ptr [bx + 1], color
+		            ret
+		            endp
+
+;----------------------------------------------------------------------
+;                              PrintRDOWNAngle
+;	print bottom right angle
+;Entry: -
+;Exit: ???
+;Destr: 
+;----------------------------------------------------------------------
+  PrintRDOWNAngle	proc
+                mov bx, y2
+                add bx, 80d
+                add bx, si
+                add bx, xlen
+                ;mov bx, RDOWN_POS
+		            mov es: byte ptr [bx], 0d9h
+		            mov es: byte ptr [bx + 1], color
+		            ret
+		            endp
+
+;----------------------------------------------------------------------
+;                              PrintLDOWNAngle
+;	print bottom left angle
+;Entry: -
+;Exit: ???
+;Destr: 
+;----------------------------------------------------------------------
+  PrintLDOWNAngle	proc
+                mov bx, y2
+                add bx, 80d
+                sub bx, si
+                sub bx, xlen/2
+                ;mov bx, LDOWN_POS
+		            mov es: byte ptr [bx], 0c0h
+		            mov es: byte ptr [bx + 1], color
+		            ret
+		            endp
+
+  mov ax, 4c00h
+  int 21h
+END	start
