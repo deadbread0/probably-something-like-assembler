@@ -12,7 +12,6 @@
   
 start:	
 
-;str part
   mov cl, ds: byte ptr [80h]
   dec cl
 
@@ -22,31 +21,23 @@ start:
   mov ax, VIDEOSEG
   mov es, ax
 
-
-  mov cx, xlen
   mov bx, y1
-  add bx, 80d
-  sub bx, si
-  sub bx, xlen/2
   call PrintLineX
 
-  mov cx, xlen
   mov bx, y2
-  add bx, 80d
-  sub bx, si
-  sub bx, xlen/2
   call PrintLineX
 
-  mov cx, ylen
   mov bx, y1
   add bx, 80d
+  sub bx, si
   sub bx, si
   sub bx, xlen/2
   call PrintLineY
 
-  mov cx, ylen
   mov bx, y1
   add bx, 80d
+  add bx, xlen/2
+  add bx, si
   add bx, si
   add bx, xlen
   call PrintLineY
@@ -107,6 +98,7 @@ start:
     mov bx, 80*2*13d 		;practically the center (y)
       
     add bx, 80			;there i find the center (x)
+    ;xor ah, ah			;delete residue from division
     mov ah, 0
     sub bx, ax			;clear ax
     mov ax, 0
@@ -116,12 +108,21 @@ start:
 ;----------------------------------------------------------------------
 ;                              PrintLineX
 ;	print hor line cx times, in bx start pos on the screen
-;Entry: cx - amount of symb
-;	bx - (first) symb pos
+;Entry:
+;	bx - line of symb pos
 ;Exit: ???
 ;Destr: cx becomes 0, bx becomes bx + 2 * cx(start)
 ;----------------------------------------------------------------------
   PrintLineX	proc
+
+    add bx, 80d ;find pos for print
+    sub bx, si
+    sub bx, si
+    sub bx, xlen/2
+
+    mov cx, xlen
+    add cx, si
+    add cx, si
   		Printline:
 		mov es: byte ptr [bx], xline
 		mov es: byte ptr [bx + 1], color
@@ -140,6 +141,8 @@ start:
 ;Destr: cx becomes 0, bx becomes bx + 2 * cx(start)
 ;----------------------------------------------------------------------
   PrintLineY	proc
+  
+    mov cx, ylen
   		Printlinee:
 		mov es: byte ptr [bx], yline
 		mov es: byte ptr [bx + 1], color
@@ -159,6 +162,7 @@ start:
                 mov bx, y1
                 add bx, 80d
                 sub bx, si
+                sub bx, si
                 sub bx, xlen/2
 		            mov es: byte ptr [bx], 0dah
 		            mov es: byte ptr [bx + 1], color
@@ -175,6 +179,8 @@ start:
   PrintRUPAngle	proc
                 mov bx, y1
                 add bx, 80d
+                add bx, xlen/2
+                add bx, si
                 add bx, si
                 add bx, xlen
 		            mov es: byte ptr [bx], 0bfh
@@ -192,6 +198,8 @@ start:
   PrintRDOWNAngle	proc
                 mov bx, y2
                 add bx, 80d
+                add bx, xlen/2
+                add bx, si
                 add bx, si
                 add bx, xlen
 		            mov es: byte ptr [bx], 0d9h
@@ -210,6 +218,7 @@ start:
                 mov bx, y2
                 add bx, 80d
                 sub bx, si
+                sub bx, si
                 sub bx, xlen/2
 		            mov es: byte ptr [bx], 0c0h
 		            mov es: byte ptr [bx + 1], color
@@ -218,5 +227,4 @@ start:
 
   mov ax, 4c00h
   int 21h
-
 END	start
