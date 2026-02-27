@@ -75,24 +75,24 @@ start:
 ;----------------------------------------------------------------------
 
   PrintString proc
-	mov di, 82h      		        ;first symbol of str
+	mov di, 82h      		        	;first symbol of str
 
-  call SetStyleOfFrame
+  	call SetStyleOfFrame
 
 	mov ax, VIDEOSEG
 	mov es, ax
 		
 	GetAndPrintLine:
 		
-	mov al, ds: byte ptr [di]	  ;input str
-  mov ah, 5dh			            ;color
-	add bx, 2			              ;step
-  mov es: word ptr [bx], ax 	;place on display
-	inc di				              ;increase counter of symbols
+	mov al, ds: byte ptr [di]	   		;input str
+  	mov ah, 5dh			            	;color
+	add bx, 2			              	;step
+  	mov es: word ptr [bx], ax 			;place on display
+	inc di				              	;increase counter of symbols
 		
 	loop GetAndPrintLine
-  ret
-  endp
+	ret
+	endp
 
 
 ;----------------------------------------------------------------------
@@ -135,7 +135,7 @@ start:
 
     mov al, cl			    ;there i divide the length by 2
     mov dl, 4
-    div dl				      ;total in al
+    div dl				    ;total in al
     xor dh, dh
     mov si, dx
     shl al, 1d			    ;mul2
@@ -152,9 +152,8 @@ start:
 
 ;----------------------------------------------------------------------
 ;                              PrintLineX
-;	print hor line cx times, in bx start pos on the screen
-;Entry:
-;	bx - line of symb pos
+;print hor line cx times, in bx start pos on the screen
+;Entry:	bx - line of symb pos
 ;Exit: ???
 ;Destr: cx becomes 0, bx becomes bx + 2 * cx(start)
 ;----------------------------------------------------------------------
@@ -179,20 +178,20 @@ start:
 
     mov al, byte ptr [di]
 
-  		Printline:
-		mov es: byte ptr [bx], al
-		mov es: byte ptr [bx + 1], color
-		add bx, 2
-		loop PrintLine
-		ret
-		endp
+  	Printline:
+	mov es: byte ptr [bx], al
+	mov es: byte ptr [bx + 1], color
+	add bx, 2
+	loop PrintLine
+	ret
+	endp
 
 
 ;----------------------------------------------------------------------
 ;                                PrintLineY
-;	print vert line cx times, in bx start pos on the screen
+;print vert line cx times, in bx start pos on the screen
 ;Entry: cx - amount of symb
-;	bx - (first) symb pos
+;		bx - (first) symb pos
 ;Exit: ???
 ;Destr: cx becomes 0, bx becomes bx + 2 * cx(start)
 ;----------------------------------------------------------------------
@@ -210,32 +209,32 @@ start:
 
     mov al, byte ptr [di]
 
-  		Printlinee:
-		mov es: byte ptr [bx], al
-		mov es: byte ptr [bx + 1], color
-		add bx, 80*2
-		loop PrintLinee
-		ret
-		endp
+  	Printlinee:
+	mov es: byte ptr [bx], al
+	mov es: byte ptr [bx + 1], color
+	add bx, 80*2
+	loop PrintLinee
+	ret
+	endp
 
 ;----------------------------------------------------------------------
 ;                              PrintAngle
-;	print angle
+;print angle
 ;Entry: bx - position
 ;       al - symbol from array
 ;Exit: ???
 ;Destr: 
 ;----------------------------------------------------------------------
   PrintAngle	proc
-		            mov es: byte ptr [bx], al
-		            mov es: byte ptr [bx + 1], color
-		            ret
-		            endp
+	mov es: byte ptr [bx], al
+	mov es: byte ptr [bx + 1], color
+	ret
+	endp
 
 
 ;----------------------------------------------------------------------
 ;                                Print2Angles
-;	try to kill copypaste
+;try to kill copypaste
 ;Entry: bx - starting line
 ;Exit: ???
 ;Destr:
@@ -251,15 +250,15 @@ start:
     call PrintAngle
     
 
-    add bx, si                      ;rup
+    add bx, si                      
     add bx, 2
     add bx, 2 * xlen
 
     inc di
     mov al, byte ptr [di]
     call PrintAngle
-		ret
-		endp
+	ret
+	endp
 
   mov ax, 4c00h
   int 21h
@@ -267,4 +266,5 @@ start:
 .data
 SymbForFrame db xline, yline, LUPAngle, RUPAngle, LDOWNAngle, RDOWNAngle, 0cdh, 0bah, 0c9h, 0bbh, 0c8h, 0bch, 0dch, 0deh, 0dch, 0dch, 0dch, 0dch, 0dfh, 0ddh, 0dfh, 0dfh, 0dfh, 0dfh 
 num_of_style db 0
+
 END	start
