@@ -134,7 +134,7 @@ New08   proc
     call PrintReg 
     call PrintFrame
 
-      push 0 ;попытки сделать прерывание в прерывании (провалено)
+      push 0 ;попытки сделать прерывание в прерывании (провалено), и дада, отступ сделан намеренно, тк этой фигни изначально тут не было
       pop es
       cli
       mov bx, 09h * 4
@@ -265,12 +265,12 @@ New08   proc
 
     mov cx, xlen
   	Printline:
-		mov es: byte ptr [bx], xline
-		mov es: byte ptr [bx + 1], color
-		add bx, 2
-		loop PrintLine
-		ret
-		endp
+	mov es: byte ptr [bx], xline
+	mov es: byte ptr [bx + 1], color
+	add bx, 2
+	loop PrintLine
+	ret
+	endp
 
 
 ;----------------------------------------------------------------------
@@ -283,12 +283,12 @@ New08   proc
   PrintLineY	proc
     mov cx, ylen
   	Printlinee:
-		mov es: byte ptr [bx], yline
-		mov es: byte ptr [bx + 1], color
-		add bx, 80*2
-		loop PrintLinee
-		ret
-		endp
+	mov es: byte ptr [bx], yline
+	mov es: byte ptr [bx + 1], color
+	add bx, 80*2
+	loop PrintLinee
+	ret
+	endp
 
 ;----------------------------------------------------------------------
 ;                              PrintAngle
@@ -299,10 +299,10 @@ New08   proc
 ;Destr: 
 ;----------------------------------------------------------------------
   PrintAngle	proc
-		            mov es: byte ptr [bx], al
-		            mov es: byte ptr [bx + 1], color
-		            ret
-		            endp
+	mov es: byte ptr [bx], al
+	mov es: byte ptr [bx + 1], color
+	ret
+	endp
 
 
 ;----------------------------------------------------------------------
@@ -314,26 +314,26 @@ New08   proc
 ;----------------------------------------------------------------------
   PrintFrame	proc
       
-       mov bx, lup
-       call PrintLineX
-       mov bx, ldown
-       call PrintLineX
-       mov bx, lup
-       call PrintLineY
-       mov bx, lup + xlen * 2
-       call PrintLineY
+    mov bx, lup
+    call PrintLineX
+    mov bx, ldown
+    call PrintLineX
+    mov bx, lup
+    call PrintLineY
+    mov bx, lup + xlen * 2
+    call PrintLineY
 
-      lea di, pos_symb_angles
-      mov cx, 4
-      PrintAngles:
-        mov bx, word ptr [di]
-        add di, 2
-        mov ax, word ptr [di]
-        add di, 2
-        call PrintAngle
-      loop PrintAngles
-		ret
-		endp
+    lea di, pos_symb_angles
+    mov cx, 4
+    PrintAngles:
+    mov bx, word ptr [di]
+    add di, 2
+    mov ax, word ptr [di]
+    add di, 2
+    call PrintAngle
+    loop PrintAngles
+	ret
+	endp
 
 .data
 saved_reg dw 0
@@ -359,4 +359,5 @@ int08flag db 0
 
 EndOfProgram:
 end    start
+
 
