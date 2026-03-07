@@ -103,80 +103,80 @@ New08   proc                        ;обработчик прерываний (
 ;----------------------------------------------------------------------
   MainFunc   proc 
 
-    push ax ;чтобы сохранить начальные значения регистров
-    push bx
-    push dx
-
-    mov ax, VIDEOSEG
-    mov es, ax
-
-    ; да, копипаст, невкусно, но мб оправдано:
-    ; 1. мне не приходится пушить cx в стек, тк нет цикла, да это ж круто!!
-    ; 2. я не знаю, как сделать подстановку регистров, типа чтобы в ax каждый раз в цикле разные регистры были
-    ; 3. это стильно, модно и молодежно
-
-    mov bx, STRING5
-    mov dx, "ax"
-    call PrintReg   
-
-    mov bx, STRING5 + LEN_OF_STR
-    pop dx
-    pop ax
-    push ax
-    push dx
-    mov dx, "bx"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 2
-    mov ax, cx
-    mov dx, "cx"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 3
-    pop ax
-    mov dx, "dx"
-    call PrintReg
-    push ax
-
-    mov bx, STRING5 + LEN_OF_STR * 4
-    mov ax, si
-    inc si
-    mov dx, "si"
-    call PrintReg 
-
-    mov bx, STRING5 + LEN_OF_STR * 5
-    mov ax, di
-    mov dx, "di"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 6
-    mov ax, bp
-    mov dx, "bp"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 7
-    mov ax, sp
-    mov dx, "sp"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 8
-    mov ax, ds
-    mov dx, "ds"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 9
-    mov ax, es
-    mov dx, "es"
-    call PrintReg
-
-    call PrintFrame
-
-    pop dx
-    pop bx
-    pop ax
-      
-    ret
-    endp
+	    push ax ;чтобы сохранить начальные значения регистров
+	    push bx
+	    push dx
+	
+	    mov ax, VIDEOSEG
+	    mov es, ax
+	
+	    ; да, копипаст, невкусно, но мб оправдано:
+	    ; 1. мне не приходится пушить cx в стек, тк нет цикла, да это ж круто!!
+	    ; 2. я не знаю, как сделать подстановку регистров, типа чтобы в ax каждый раз в цикле разные регистры были
+	    ; 3. это стильно, модно и молодежно
+	
+	    mov bx, STRING5
+	    mov dx, "ax"
+	    call PrintReg   
+	
+	    mov bx, STRING5 + LEN_OF_STR
+	    pop dx
+	    pop ax
+	    push ax
+	    push dx
+	    mov dx, "bx"
+	    call PrintReg
+	
+	    mov bx, STRING5 + LEN_OF_STR * 2
+	    mov ax, cx
+	    mov dx, "cx"
+	    call PrintReg
+	
+	    mov bx, STRING5 + LEN_OF_STR * 3
+	    pop ax
+	    mov dx, "dx"
+	    call PrintReg
+	    push ax
+	
+	    mov bx, STRING5 + LEN_OF_STR * 4
+	    mov ax, si
+	    inc si
+	    mov dx, "si"
+	    call PrintReg 
+	
+	    mov bx, STRING5 + LEN_OF_STR * 5
+	    mov ax, di
+	    mov dx, "di"
+	    call PrintReg
+	
+	    mov bx, STRING5 + LEN_OF_STR * 6
+	    mov ax, bp
+	    mov dx, "bp"
+	    call PrintReg
+	
+	    mov bx, STRING5 + LEN_OF_STR * 7
+	    mov ax, sp
+	    mov dx, "sp"
+	    call PrintReg
+	
+	    mov bx, STRING5 + LEN_OF_STR * 8
+	    mov ax, ds
+	    mov dx, "ds"
+	    call PrintReg
+	
+	    mov bx, STRING5 + LEN_OF_STR * 9
+	    mov ax, es
+	    mov dx, "es"
+	    call PrintReg
+	
+	    call PrintFrame
+	
+	    pop dx
+	    pop bx
+	    pop ax
+	      
+	    ret
+	    endp
 
 ;----------------------------------------------------------------------
 ;                         PrintReg
@@ -189,44 +189,44 @@ New08   proc                        ;обработчик прерываний (
 ;----------------------------------------------------------------------
   PrintReg   proc 
 
-    mov es: byte ptr [bx], dh
-    mov es: byte ptr [bx + 1], 0dh
-    add bx, 2
-    mov es: byte ptr [bx], dl
-    mov es: byte ptr [bx + 1], 0dh
-    add bx, 10
-
-    mov SAVED_REG, ax
-
-    shl al, 4               ;first on the right
-    shr al, 4
-    call PrintHalfOfReg
-
-    sub bx, 2
-    mov ax, SAVED_REG
-            
-    shr al, 4               ;second on the right
-    call PrintHalfOfReg
-
-    sub bx, 2
-    mov ax, SAVED_REG
-
-    shl ah, 4               ;second on the left
-    shr ah, 4
-    mov al, ah
-    call PrintHalfOfReg
-
-    sub bx, 2
-    mov ax, SAVED_REG
-
-    shr ah, 4               ;first on the left
-    mov al, ah
-    call PrintHalfOfReg
-
-    mov ax, SAVED_REG
-      
-    ret
-    endp
+	    mov es: byte ptr [bx], dh
+	    mov es: byte ptr [bx + 1], 0dh
+	    add bx, 2
+	    mov es: byte ptr [bx], dl
+	    mov es: byte ptr [bx + 1], 0dh
+	    add bx, 10
+	
+	    mov SAVED_REG, ax
+	
+	    shl al, 4               ;first on the right
+	    shr al, 4
+	    call PrintHalfOfReg
+	
+	    sub bx, 2
+	    mov ax, SAVED_REG
+	            
+	    shr al, 4               ;second on the right
+	    call PrintHalfOfReg
+	
+	    sub bx, 2
+	    mov ax, SAVED_REG
+	
+	    shl ah, 4               ;second on the left
+	    shr ah, 4
+	    mov al, ah
+	    call PrintHalfOfReg
+	
+	    sub bx, 2
+	    mov ax, SAVED_REG
+	
+	    shr ah, 4               ;first on the left
+	    mov al, ah
+	    call PrintHalfOfReg
+	
+	    mov ax, SAVED_REG
+	      
+	    ret
+	    endp
 
 
 ;----------------------------------------------------------------------
@@ -238,19 +238,19 @@ New08   proc                        ;обработчик прерываний (
 ;----------------------------------------------------------------------
   PrintHalfOfReg   proc 
 
-    cmp al, 9           ;comparison with 9
-    ja LETTER1          ;if it's not num jump
-	  add al, 30h         ;ascii for num
-    jmp PRINTBYTE1
-    LETTER1:
-    sub al, 10d         ;ascii for letter
-    add al, 41h
-    PRINTBYTE1:         ;even a baby will understand it
-    mov es: byte ptr [bx], al
-    mov es: byte ptr [bx + 1], 0dh
-      
-    ret
-    endp
+	    cmp al, 9           ;comparison with 9
+	    ja LETTER1          ;if it's not num jump
+		add al, 30h         ;ascii for num
+	    jmp PRINTBYTE1
+	    LETTER1:
+	    sub al, 10d         ;ascii for letter
+	    add al, 41h
+	    PRINTBYTE1:         ;even a baby will understand it
+	    mov es: byte ptr [bx], al
+	    mov es: byte ptr [bx + 1], 0dh
+	      
+	    ret
+	    endp
 
 
     
@@ -264,8 +264,8 @@ New08   proc                        ;обработчик прерываний (
 ;----------------------------------------------------------------------
   PrintLineX	proc
 
-    mov cx, XLEN
-  	Printline:
+	    mov cx, XLEN
+	  	Printline:
 		mov es: byte ptr [bx], XLINE
 		mov es: byte ptr [bx + 1], COLOR
 		add bx, 2
@@ -282,8 +282,9 @@ New08   proc                        ;обработчик прерываний (
 ;Destr: cx becomes 0, bx becomes bx + 2 * cx(start)
 ;----------------------------------------------------------------------
   PrintLineY	proc
-    mov cx, YLEN
-  	Printlinee:
+
+	    mov cx, YLEN
+	  	Printlinee:
 		mov es: byte ptr [bx], YLINE
 		mov es: byte ptr [bx + 1], COLOR
 		add bx, 80*2
@@ -301,39 +302,40 @@ New08   proc                        ;обработчик прерываний (
 ;----------------------------------------------------------------------
   PrintFrame	proc
       
-    mov bx, LUP
-    call PrintLineX
-    mov bx, LDOWN
-    call PrintLineX
-    mov bx, LUP
-    call PrintLineY
-    mov bx, LUP + XLEN * 2
-    call PrintLineY
+	    mov bx, LUP
+	    call PrintLineX
+	    mov bx, LDOWN
+	    call PrintLineX
+	    mov bx, LUP
+	    call PrintLineY
+	    mov bx, LUP + XLEN * 2
+	    call PrintLineY
 
 		ret
 		endp
 
 .data
-SAVED_REG dw 0
-LUP = (3 * 80d + 42d) * 2
-LDOWN = (21 * 80d + 42d) * 2
-YLEN = 18
-XLEN = 16
-RUP = LUP + XLEN * 2 
-RDOWN = LDOWN + XLEN * 2 
-COLOR = 0dh
-XLINE = 0c4h
-YLINE = 0b3h
-LUPAngle = 0dah
-RUPAngle = 0bfh
-LDOWNAngle = 0c0h
-RDOWNAngle = 0d9h
-int08flag db 0
-STRING5 = (5 * 80d + 50d) * 2
-LEN_OF_STR = 160
-;regs db di, bp, sp, ds, es такое досбокс не одобряет, это печально, придется оставлять копипастт
-;name_of_reg dw "di", "bp", "sp", "ds", "es"
+		SAVED_REG dw 0
+		LUP = (3 * 80d + 42d) * 2
+		LDOWN = (21 * 80d + 42d) * 2
+		YLEN = 18
+		XLEN = 16
+		RUP = LUP + XLEN * 2 
+		RDOWN = LDOWN + XLEN * 2 
+		COLOR = 0dh
+		XLINE = 0c4h
+		YLINE = 0b3h
+		LUPAngle = 0dah
+		RUPAngle = 0bfh
+		LDOWNAngle = 0c0h
+		RDOWNAngle = 0d9h
+		int08flag db 0
+		STRING5 = (5 * 80d + 50d) * 2
+		LEN_OF_STR = 160
+		;regs db di, bp, sp, ds, es такое досбокс не одобряет, это печально, придется оставлять копипастт
+		;name_of_reg dw "di", "bp", "sp", "ds", "es"
 
 EndOfProgram:
 end    start
+
 
