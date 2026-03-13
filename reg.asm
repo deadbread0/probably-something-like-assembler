@@ -101,13 +101,12 @@ New08   proc                        ;обработчик прерываний (
         xor ch, ch
         mov cx, 0dh
         mov byte ptr [di], cl
-        ;push es ds sp bp di si dx cx bx ax
-        mov dx, 9999
-        mov ax, 9999
-        mov bx, 9999h
-    push dx bx ax
+
+        inc bp                      ;по приколу, чтобы не все регистры были неподвижными в рамке
+        push ss es ds sp bp di si dx cx bx ax
         call MainFunc
-    pop ax bx dx
+        pop ax bx cx dx si di bp sp ds es ss
+
         jmp AfterNoFlag
 
         NoFlag:                     ;теперь рамка может исчезать (ну просто она становится прозрачной)
@@ -115,10 +114,10 @@ New08   proc                        ;обработчик прерываний (
         xor ch, ch
         mov cx, 0h
         mov byte ptr [di], cl
-        ;push es ds sp bp di si dx cx bx ax
-    push dx bx ax
+
+        push ss es ds sp bp di si dx cx bx ax
         call MainFunc
-    pop ax bx dx
+        pop ax bx cx dx si di bp sp ds es ss
 
         AfterNoFlag:
 
@@ -146,83 +145,45 @@ New08   proc                        ;обработчик прерываний (
   MainFunc   proc 
 
     push bp
-    mov bp, sp
+    mov bp, sp                        ;будем через последний элемент стека адресоваться к другим элементам в нем
+
     mov ax, VIDEOSEG
     mov es, ax
 
-    lea si, NAMES_OF_REG              ;!!!!!!вот тут че то не то считывается... если просто оставить mov dx, "ax", то все будет норм
-    mov dh, byte ptr [si]             ;чзх?? типа вместо ax выводится в рамке две какие-то другие буквы (даже не английские...)
-    mov dl, byte ptr [si + 1]
+    mov cx, NUM_OF_REG                ;столько раз будем печатать регистры
+    lea si, NAMES_OF_REG  
+    add bp, 2 * 2                     ;пропускаем в стеке адрес возврата и bp 
+    ;mov bx, STRING5
 
-    ;pop ax
-    mov ax, word ptr [bp + 2 * 2]
-    mov bx, STRING5
-    ;mov dx, "ax"
-    call PrintReg   
+    PrintAllRegs:
 
-    mov bx, STRING5 + LEN_OF_STR
-    ;pop dx
-    ;pop ax
-    mov ax, word ptr [bp + 3 * 2]
-    ;push ax
-    ;push dx
-    mov dx, "bx"
+    mov SAVED_REG2, cx
+
+    mov ax, LEN_OF_STR                ;bx = 5 строка + порядковый номер регистра (с нуля) * длина строки
+    mov bx, NUM_OF_REG
+    sub bx, cx
+    mul bx
+    mov bx, ax
+    add bx, STRING5
+
+    ;mov bx, STRING5
+    ;mov ax, LEN_OF_STR
+    ;mul cx
+
+    mov ax, word ptr [bp]
+    add bp, 2                         ;двигаемся по стеку
+
+    mov dh, byte ptr cs:[si]          ;помещаем сюда имя регистра (в dh первую букву)
+    mov dl, byte ptr cs:[si + 1]
+    add si, 2                         ;смещение по массиву названий регистров
     call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 2
-    mov ax, cx
-    mov dx, "cx"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 3
-    ;pop ax
-    mov ax, word ptr [bp + 4 * 2]
-    mov dx, "dx"
-    call PrintReg
-    ;push ax
-
-    mov bx, STRING5 + LEN_OF_STR * 4
-    mov ax, si
-    inc si
-    mov dx, "si"
-    call PrintReg 
-
-    mov bx, STRING5 + LEN_OF_STR * 5
-    mov ax, di
-    mov dx, "di"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 6
-    mov ax, bp
-    mov dx, "bp"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 7
-    mov ax, sp
-    mov dx, "sp"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 8
-    mov ax, ds
-    mov dx, "ds"
-    call PrintReg
-
-    mov bx, STRING5 + LEN_OF_STR * 9
-    mov ax, es
-    mov dx, "es"
-    call PrintReg
-
-    mov ax, word ptr [bp + 5 * 2]
-    mov bx, STRING5 + LEN_OF_STR * 10
-    mov dx, "ip"
-    call PrintReg
+    ;add bx, LEN_OF_STR
+    mov cx, SAVED_REG2
+    loop PrintAllRegs
 
     call PrintFrame
 
-    ;pop dx
-    ;pop bx
-    ;pop ax
-    pop bp
+    pop bp                            ;почистим после своих прикольчиков стек
       
     ret
     endp
@@ -381,7 +342,7 @@ New08   proc                        ;обработчик прерываний (
     mov bx, LUP + XLEN * 2
     call PrintLineY
 
-    ;call PrintAngles
+    call PrintAngles
 
 		ret
 		endp
@@ -417,8 +378,7 @@ New08   proc                        ;обработчик прерываний (
     dec cx                    
     mov SAVED_REG1, cx       
     loop FirstLoop           
-
-    ; call PrintAngles        
+   
     ret
 endp
 
@@ -442,13 +402,10 @@ endp
     PrintOneOfThem:
     xor bx, bx
     xor ax, ax
-    mov bx, word ptr [si]
+    mov bx, word ptr cs:[si]
     add si, 2
-    mov al, byte ptr [di]
+    mov al, byte ptr cs:[di]
     inc di
-
-    sub di, NUM_OF_ANGLS
-    add di, cx
 
 		mov es: byte ptr [bx], al
 		mov es: byte ptr [bx + 1], dl
@@ -460,6 +417,7 @@ endp
 .data
 SAVED_REG dw 0
 SAVED_REG1 dw 0
+SAVED_REG2 dw 0
 LUP = (3 * 80d + 42d) * 2
 LDOWN = (21 * 80d + 42d) * 2
 YLEN = 18
@@ -473,15 +431,15 @@ LUPAngle = 0dah
 RUPAngle = 0bfh
 LDOWNAngle = 0c0h
 RDOWNAngle = 0d9h
-NUM_OF_ANGLS = 2
-SMB_OF_ANGLS db LUPAngle, LDOWNAngle
-POS_OF_ANGLS dw LUP, LDOWN
+NUM_OF_ANGLS = 4
+SMB_OF_ANGLS db LUPAngle, LDOWNAngle, RUPAngle, RDOWNAngle
+POS_OF_ANGLS dw LUP, LDOWN, RUP, RDOWN
 int08flag db 0
 flgbckgrnd db 0
 STRING5 = (5 * 80d + 50d) * 2
 LEN_OF_STR = 160
-NAMES_OF_REG db "axbx$"
-NUM_OF_REG = 12
+NAMES_OF_REG db "ax", "bx", "cx", "dx", "si", "di", "bp", "sp", "ds", "es", "ss", "ip", "cs"
+NUM_OF_REG = 13
 
 EndOfProgram:
 end    start
