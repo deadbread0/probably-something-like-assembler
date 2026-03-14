@@ -39,6 +39,7 @@ start:
 New09   proc                        ;обработчик прерываний (клавиатура)
         push ax 
         push bx 
+        push cx
         push es
         push 0b800h
         pop es
@@ -77,6 +78,7 @@ New09   proc                        ;обработчик прерываний (
         out 20h, al
 
         pop es 
+        pop cx
         pop bx 
         pop ax
 
@@ -90,6 +92,7 @@ New09   proc                        ;обработчик прерываний (
 New08   proc                        ;обработчик прерываний (таймер)
         push ax 
         push bx 
+        push cx
         push es
 
         push 0b800h
@@ -98,12 +101,12 @@ New08   proc                        ;обработчик прерываний (
         cmp int08flag, 1
         jne NoFlag                  ;если флаг из 9 прерывания выставлен, то обновляем рамку
         lea di, COLOR               
-        xor ch, ch
+        xor cx, cx
         mov cx, 0dh
         mov byte ptr [di], cl
 
         inc bp                      ;по приколу, чтобы не все регистры были неподвижными в рамке
-        push ss es ds sp bp di si dx cx bx ax
+        push ss es ds sp bp di si dx cx bx ax    ;cx, бро, что с тобой...
         call MainFunc
         pop ax bx cx dx si di bp sp ds es ss
 
@@ -111,13 +114,11 @@ New08   proc                        ;обработчик прерываний (
 
         NoFlag:                     ;теперь рамка может исчезать (ну просто она становится прозрачной)
         lea di, COLOR
-        xor ch, ch
+        xor cx, cx
         mov cx, 0h
         mov byte ptr [di], cl
 
-        push ss es ds sp bp di si dx cx bx ax
-        call MainFunc
-        pop ax bx cx dx si di bp sp ds es ss
+        call MainFunc               ;тут вообще можно не пушить регистры, тк они все равно прозрачным выведутся
 
         AfterNoFlag:
 
@@ -125,6 +126,7 @@ New08   proc                        ;обработчик прерываний (
         out 20h, al
 
         pop es 
+        pop cx
         pop bx 
         pop ax
 
