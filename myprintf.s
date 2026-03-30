@@ -46,7 +46,7 @@ fakeprintf:
 
             call myprintf  
 
-            ret                     ;кстати без этого мусор печатается после того, что надо
+            ret                      ;кстати без этого мусор печатается после того, что надо
 
 ;-----------------------------------------------------
 ; getparams
@@ -55,13 +55,13 @@ fakeprintf:
 ;-----------------------------------------------------
 getparams:
             push rbp
-            mov rbp, rsp            ;будем через последний элемент стека адресоваться к другим элементам в нем
+            mov rbp, rsp             ;будем через последний элемент стека адресоваться к другим элементам в нем
 
             mov rcx, [DEFAULT_BUFSIZE]
             xor rsi, rsi
 
             GetSymb:
-            mov dl, byte [rdi + rsi]          ;прием спецификаторов на вход
+            mov dl, byte [rdi + rsi] ;прием спецификаторов на вход
             mov byte [SPECS + rsi], dl
             inc rsi
             loop GetSymb
@@ -69,13 +69,13 @@ getparams:
             xor rcx, rcx
             xor rdi, rdi
             mov rcx, [MAXSPECS]     
-            mov rdx, 2 * 8          ;скип адреса возврата и rbp в стеке
+            mov rdx, 2 * 8            ;скип адреса возврата и rbp в стеке
 
             Get1Arg:
             mov rsi, [rbp + rdx]
             mov [WHATPRINTF + rdi], rsi ;записываем в массив значения из стека
-            add rdi, [ELSIZE]       ;расстояние до следующих данных в массиве
-            add rdx, 8              ;следующий элемент в стеке
+            add rdi, [ELSIZE]         ;расстояние до следующих данных в массиве
+            add rdx, 8                ;следующий элемент в стеке
             loop Get1Arg
 
             pop rbp
@@ -97,16 +97,15 @@ myprintf:                           ;в этой функции в цикле в
             mov rcx, [MAXSPECS]
 
             PrintEl:
-            mov bl, byte [SPECS + rdi] ;AAAA я не пон че тут происходит
-            ;тут в bl должен записываться символ из массива спецификаторов, через отладчик я проверила, что вроде как все правильно записывается, но уже на второй итерации происходит какой-то бред:
-            ;появляются непонятные нули, причем если просто записать "mov bl, byte [SPECS + 2]", то выведется тот символ, который реально нужен, но при rdi = 2 в bl записывается '0',
-            ;вот короче что то стремное творится, я в отчаянии, годы поисков ошибки не привели к успеху
+            mov bl, byte [SPECS + rdi] 
 
             cmp bl, ' '
             je PrintSpace
 
             inc rdi
-            mov bh, byte [SPECS + rdi]
+
+            mov bh, byte [SPECS + rdi] 
+
 
             push rbp
             mov rax, rbp
@@ -120,6 +119,7 @@ myprintf:                           ;в этой функции в цикле в
 
             call changes_for_prcnt    ;да, обработка "%%" отдельная, это кажется удобным, но мб это только кажется
             call myprintf1
+
             jmp TheEnd
 
             PrintSpace:
@@ -144,6 +144,10 @@ myprintf:                           ;в этой функции в цикле в
 myprintf1:                          ;печатает 1 спецификатор
             push rcx
             push rdi
+            push rbx
+            push rbp
+            mov rbp, rsp            ;будем через последний элемент стека адресоваться к другим элементам в нем
+            mov rbx, [rbp + 8]
 
             shr bx, 8               ;бесполезный символ процента надо вытолкнуть из регистра (константы не будет, я не знаю, как это можно назвать)
             sub bx, 'b'             ;а тут для таблицы переходов делаем из спецификатора индекс для таблички
@@ -187,6 +191,9 @@ myprintf1:                          ;печатает 1 спецификатор
             DEFT:
             mov rcx, [DEFAULT_BUFSIZE]
             mov [BufSize], rcx
+
+            pop rbp
+            pop rbx
             pop rdi
             pop rcx
 
@@ -240,9 +247,22 @@ changes_for_prcnt:
 ; exit:
 ;-----------------------------------------------------
 changes_for_s:   
-            push rcx 
-            mov [Buffer], rax
-            pop rcx
+
+            push rdi
+            push rbx
+            xor rdi, rdi
+
+            copy_loop:              ;посимвольно переписывает, мда, осуждаю
+            mov bl, [rax]
+            mov [Buffer + rdi], bl
+            inc rax
+            inc rdi
+            cmp bl, 0
+            jne copy_loop
+
+            pop rbx
+            pop rdi
+
             ret
 
 ;-----------------------------------------------------
@@ -387,7 +407,7 @@ remake_nums8:
             shr rax, cl            
             jnc End22
 
-            cmp rcx, rsi                     ;отдельная обработка знака (сравнение с 33)
+            cmp rcx, rsi                    ;отдельная обработка знака (сравнение с 33)
             je End22
             add rdi, 4
             End22:
@@ -432,6 +452,7 @@ remake_nums8:
 ;----------------------------------------------------------------------
 remake_nums10: 
 
+            push rbx
             xor rdx, rdx
             xor rdi, rdi
             mov [SAVED_REG], rax 
@@ -448,7 +469,8 @@ remake_nums10:
             cqo
             loop MakeDigit
 
-            call reverse_buf
+            call reverse_buf            ;импостер!!
+            pop rbx
 
             ret
 
@@ -458,15 +480,15 @@ remake_nums10:
 ; exit:  перевернутый буфер
 ;----------------------------------------------------------------------
 reverse_buf: 
-            push cx
+            push rcx
             mov rcx, [BufSize]
             mov rdx, 0
 
-            ReverseBuf:
+            ReverseBuf:                 ;вот тут затираются данные в SPECS, беспредел
             dec rcx                     ;индексация с нуля, так надо
-            mov rax, [Buffer + rcx] 
-            inc rcx 
-            mov [NewBuf + rdx], rax
+            mov al, byte [Buffer + rcx] ;ошибка была тут, было rax, не было byte, вот и записывалось больше, чем надо,
+            inc rcx                     ;буфер SPECS в сегменте данных лежит прям за переполненным NewBuf
+            mov byte [NewBuf + rdx], al
             inc rdx
             loop ReverseBuf
 
@@ -489,7 +511,7 @@ reverse_buf:
             loop CopyBuf
 
             mov [BufSize], rdx          ;шок, теперь в буфсайз реально занятый размер буфера
-            pop cx
+            pop rcx
 
             ret
 
