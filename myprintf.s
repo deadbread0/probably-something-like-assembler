@@ -7,16 +7,13 @@ global fakeprintf                       ; predefined entry point name for ld
 section .bss
 SAVED_REG: resb 4
 Buffer: resb 32                     ; Резервирует 32 байта под именем Buffer
-NewBuf: resb 32
-SPECS: resb 32                      ;тут спецификаторы хранятся
-WHATPRINTF: resb 32                 ;столько памяти могут занимать данные для печати
 
 section     .data
 DEFAULT_BUFSIZE: dq 32
 AMOUNT_OF_CASES: dq 23              ;количество вариантов в CHOOSELABEL
 BufSize: dq 32                      ;dq, а не db, тк иначе старшие биты засоряются и ошибки вылезают
 Shift: dd 0
-ELSIZE: dq 8                        ;это надо, чтоб данные не склеивались
+ELSIZE: dq 8                        ;это размер данных в стеке
 MAXSPECS: dq 10                     ;кол-во итераций в myprintf и getparams, может не отражать максимальное число 
                                     ;спецификаторов, тк еще ограничения по памяти для двух массивов есть
 
@@ -31,55 +28,16 @@ fakeprintf:
             push rdx 
             push rsi 
 
-            call getparams
-
-            pop r9 
-            pop r9 
-            pop r9 
-            pop r9 
-            pop r9
-
-            xor rbx, rbx
-            xor rdx, rdx
-            xor rdi, rdi
-            xor rsi, rsi
-
             call myprintf  
+
+            pop rsi 
+            pop rdx 
+            pop rcx 
+            pop r8 
+            pop r9
 
             ret                      ;кстати без этого мусор печатается после того, что надо
 
-;-----------------------------------------------------
-; getparams
-; enter:    параметры в стеке
-; exit:
-;-----------------------------------------------------
-getparams:
-            push rbp
-            mov rbp, rsp             ;будем через последний элемент стека адресоваться к другим элементам в нем
-
-            mov rcx, [DEFAULT_BUFSIZE]
-            xor rsi, rsi
-
-            GetSymb:
-            mov dl, byte [rdi + rsi] ;прием спецификаторов на вход
-            mov byte [SPECS + rsi], dl
-            inc rsi
-            loop GetSymb
-
-            xor rcx, rcx
-            xor rdi, rdi
-            mov rcx, [MAXSPECS]     
-            mov rdx, 2 * 8            ;скип адреса возврата и rbp в стеке
-
-            Get1Arg:
-            mov rsi, [rbp + rdx]
-            mov [WHATPRINTF + rdi], rsi ;записываем в массив значения из стека
-            add rdi, [ELSIZE]         ;расстояние до следующих данных в массиве
-            add rdx, 8                ;следующий элемент в стеке
-            loop Get1Arg
-
-            pop rbp
-            ret
 
 ;-----------------------------------------------------
 ; myprintf
@@ -90,34 +48,32 @@ getparams:
 ;-----------------------------------------------------
 myprintf:                           ;в этой функции в цикле выделяется спецификатор и данные для печати из массивов      
                                     ;в каждой итерации вызывается печать одного спецификатора
-            xor rdx, rdx           
-            xor rdi, rdi
-            xor rbp, rbp
+            push rbp
+            mov rbp, rsp             ;будем через последний элемент стека адресоваться к другим элементам в нем 
+            add rbp, 2 * 8           ;пропускаем адрес возврата и rbp в стеке
+                                     ;через rbp теперь обращаемся в данным для печати
+
+            xor rdx, rdx  
             xor rax, rax
+            xor rsi, rsi
+            xor rbx, rbx
             mov rcx, [MAXSPECS]
 
             PrintEl:
-            mov bl, byte [SPECS + rdi] 
+            mov bl, byte [rdi]      ;принимаем символ из строки спецификаторов
 
             cmp bl, ' '
             je PrintSpace
 
             inc rdi
 
-            mov bh, byte [SPECS + rdi] 
+            mov bh, byte [rdi] 
 
-
-            push rbp
-            mov rax, rbp
+            mov rax, [rbp]          ;данные для печати
             mov rsi, [ELSIZE]
-            mul rsi
-            mov rbp, rax
-            xor rax, rax
-            mov rax, [WHATPRINTF + rbp]
-            pop rbp
-            inc rbp
+            add rbp, rsi            ;переход к следующему элементу в стеке
 
-            call changes_for_prcnt    ;да, обработка "%%" отдельная, это кажется удобным, но мб это только кажется
+            call changes_for_prcnt  ;да, обработка "%%" отдельная, это кажется удобным, но мб это только кажется
             call myprintf1
 
             jmp TheEnd
@@ -129,8 +85,9 @@ myprintf:                           ;в этой функции в цикле в
 
             TheEnd:
             inc rdi
-            call cleanbuf
             loop PrintEl
+
+            pop rbp
 
             ret
 
@@ -199,20 +156,6 @@ myprintf1:                          ;печатает 1 спецификатор
 
             ret
 
-;-----------------------------------------------------
-; cleanbuf
-; enter:    rax - number (symb)
-; exit:
-;-----------------------------------------------------
-cleanbuf:       
-            push rcx                   
-            mov rcx, [BufSize]
-            DeleteSymb:
-            mov byte [Buffer + rcx], ''
-            loop DeleteSymb
-
-            pop rcx
-            ret
 
 ;-----------------------------------------------------
 ; changes_for_1char
@@ -463,55 +406,30 @@ remake_nums10:
             MakeDigit:
             mov rbx, 10                 ;на это делить надо
             div rbx                     ;остаток от деления в rdx
+
             add rdx, 30h                ;цифра -> буква
-            mov [Buffer + rdi], rdx     ;по неизвестным причинам если я пытаюсь вывести в норм порядке, выводится 0, восхитительно
+            push rdx                    ;кладется на стек
+            ;mov [Buffer + rdi], rdx     ;по неизвестным причинам если я пытаюсь вывести в норм порядке, выводится 0, восхитительно
+            
             inc rdi
             cqo
+
+            cmp rax, 0
+            je NumIsOver                ;если число закончилось, заканчиваем вынос цифр в стек
+
             loop MakeDigit
 
-            call reverse_buf            ;импостер!!
+            NumIsOver:
+            mov rcx, rdi                ;в rdi кол-во цифр из прошлого цикла
+            mov [BufSize], rdi
+            xor rdi, rdi
+            FillBuf:
+            pop rdx
+            mov byte [Buffer + rdi], dl
+            inc rdi
+            loop FillBuf
+
             pop rbx
-
-            ret
-
-;----------------------------------------------------------------------
-; reverse_buf
-; enter: норм буфер
-; exit:  перевернутый буфер
-;----------------------------------------------------------------------
-reverse_buf: 
-            push rcx
-            mov rcx, [BufSize]
-            mov rdx, 0
-
-            ReverseBuf:                 ;вот тут затираются данные в SPECS, беспредел
-            dec rcx                     ;индексация с нуля, так надо
-            mov al, byte [Buffer + rcx] ;ошибка была тут, было rax, не было byte, вот и записывалось больше, чем надо,
-            inc rcx                     ;буфер SPECS в сегменте данных лежит прям за переполненным NewBuf
-            mov byte [NewBuf + rdx], al
-            inc rdx
-            loop ReverseBuf
-
-            mov rcx, [BufSize]          ;чего не сделаешь для следующего цикла, все восстанавливаем
-            mov rdx, 0
-            mov rsi, 0
-            xor rax, rax
-
-            CopyBuf:
-            mov al, byte [NewBuf + rsi]
-            inc rsi                     ;индекс ньюбаф
-            cmp rdx, 0
-            jne MoveToBuf               ;дада снова приходится убивать ведущие нули
-            cmp rax, '0'
-            je Trash
-            MoveToBuf:
-            mov [Buffer + rdx], rax
-            inc rdx                     ;индекс буфера
-            Trash:
-            loop CopyBuf
-
-            mov [BufSize], rdx          ;шок, теперь в буфсайз реально занятый размер буфера
-            pop rcx
 
             ret
 
@@ -523,23 +441,9 @@ CHOOSELABEL:                            ;понимаю, выглядит неп
     dq B           ; Вариант %b         ;а еще ассемблерный листинг switch показал +- то же самое, такие дела
     dq C           ; Вариант %c
     dq D           ; Вариант %d
-    dq DEFT
-    dq DEFT
-    dq DEFT
-    dq DEFT
-    dq DEFT
-    dq DEFT
-    dq DEFT
-    dq DEFT
-    dq DEFT
-    dq DEFT
+    times ('O' - 'D' - 1) dq DEFT
     dq O           ; Вариант %o
-    dq DEFT
-    dq DEFT
-    dq DEFT
+    times ('S' - 'O' - 1) dq DEFT
     dq S           ; Вариант %s
-    dq DEFT 
-    dq DEFT
-    dq DEFT
-    dq DEFT
+    times ('X' - 'S' - 1) dq DEFT
     dq X           ; Вариант %x
